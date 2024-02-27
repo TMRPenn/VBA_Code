@@ -90,4 +90,5 @@ Function CubicSpline(KnownXs, KnownYs, NewX)
 endnow:
     ' Label for error handling and the end of the function
 
+'TradeMarkRobery
 End Function
