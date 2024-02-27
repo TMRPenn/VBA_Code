@@ -1,0 +1,93 @@
+Function CubicSpline(KnownXs, KnownYs, NewX)
+    
+    ' This function performs cubic spline interpolation to find an interpolated value (y) for a given NewX, 
+    ' based on arrays of known X and Y values.
+
+    ' Declaration of variables
+    Dim period_count As Integer
+    Dim rate_count As Integer
+    Dim n As Integer
+    Dim i, K As Integer
+    Dim p, qn, sig, UN As Single
+    Dim vr As Variant
+    Dim y As Double
+        
+    ' Counting the number of known X and Y values
+    period_count = KnownXs.Count
+    rate_count = KnownYs.Count
+
+    ' Initializing arrays for internal calculations
+    ReDim u(period_count - 1) As Single
+    ReDim yt(period_count) As Single
+       
+    ' Check if the number of X values matches the number of Y values
+    If period_count <> rate_count Then
+        CubicSpline = "Error: Range count does not match"
+        GoTo endnow
+    End If
+     
+    ' Initializing arrays to store the input X and Y values
+    ReDim xin(period_count) As Single
+    ReDim yin(period_count) As Single
+    Dim c As Integer
+    
+    ' Populating the xin and yin arrays with the known X and Y values
+    For c = 1 To period_count
+        If KnownXs(c) <> "" Then xin(c) = KnownXs(c)
+        If KnownYs(c) <> "" Then yin(c) = KnownYs(c)
+    Next c
+    
+    ' n is the number of periods (known data points)
+    n = period_count
+    yt(1) = 0
+    u(1) = 0
+    
+    ' Calculating the second derivatives of the interpolating function at the known points
+    For i = 2 To n - 1
+        sig = (xin(i) - xin(i - 1)) / (xin(i + 1) - xin(i - 1))
+        p = sig * yt(i - 1) + 2
+        yt(i) = (sig - 1) / p
+        u(i) = (yin(i + 1) - yin(i)) / (xin(i + 1) - xin(i)) - (yin(i) - yin(i - 1)) / (xin(i) - xin(i - 1))
+        u(i) = (6 * u(i) / (xin(i + 1) - xin(i - 1)) - sig * u(i - 1)) / p
+    Next i
+        
+    ' Boundary conditions for the second derivative
+    qn = 0
+    UN = 0
+    yt(n) = (UN - qn * u(n - 1)) / (qn * yt(n - 1) + 1)
+    
+    ' Back substitution step of the tridiagonal algorithm
+    For K = n - 1 To 1 Step -1
+        yt(K) = yt(K) * yt(K + 1) + u(K)
+    Next K
+    
+    ' Initializing variables for the spline evaluation
+    Dim klo, khi As Integer
+    Dim h, b, a As Single
+    
+    ' Finding the right place in the table by means of bisection
+    klo = 1
+    khi = n
+    Do
+        K = khi - klo
+        If xin(K) > NewX Then
+            khi = K
+        Else
+            klo = K
+        End If
+        K = khi - klo
+    Loop While K > 1
+    
+    ' Interpolating between two known points
+    h = xin(khi) - xin(klo)
+    a = (xin(khi) - NewX) / h
+    b = (NewX - xin(klo)) / h
+    y = a * yin(klo) + b * yin(khi) + ((a ^ 3 - a) * yt(klo) + (b ^ 3 - b) * yt(khi)) * (h ^ 2) / 6
+    
+    ' Returning the interpolated value
+    CubicSpline = y
+
+endnow:
+    ' Label for error handling and the end of the function
+
+End Function
